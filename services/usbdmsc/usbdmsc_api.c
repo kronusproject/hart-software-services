@@ -109,6 +109,11 @@ bool USBDMSC_Init(void)
         }
     }
 
+    if (result) {
+        if (HSS_Trigger_IsNotified(EVENT_USBDMSC_FINISHED)) {
+            HSS_Trigger_Clear(EVENT_USBDMSC_FINISHED);
+        }
+    }
     return result;
 }
 
@@ -118,7 +123,8 @@ bool USBDMSC_Poll(void)
 {
     bool idle = mpu_blocks_access;
 
-    if (!HSS_Trigger_IsNotified(EVENT_USBDMSC_REQUESTED)) {
+    if (HSS_Trigger_IsNotified(EVENT_USBDMSC_FINISHED)) {
+        HSS_Trigger_Clear(EVENT_USBDMSC_FINISHED);
         idle = true;
     }
 
@@ -155,10 +161,10 @@ bool USBDMSC_Poll(void)
         }
     }
 
-//    if (idle) {
-//        // clear any residual MMC / main USB / DMA USB interrupts
-//        PLIC_ClearPendingIRQ();
-//    }
+    if (idle) {
+        // clear any residual MMC / main USB / DMA USB interrupts
+        PLIC_ClearPendingIRQ();
+    }
 
     return idle;
 }
@@ -169,7 +175,4 @@ void USBDMSC_Shutdown(void)
     SYSREG->SUBBLK_CLOCK_CR |= SUBBLK_CLOCK_CR_USB_MASK;
     SYSREG->SOFT_RESET_CR &= ~SOFT_RESET_CR_USB_MASK;
     SYSREG->SOFT_RESET_CR |= SOFT_RESET_CR_USB_MASK;
-
-    // clear any residual MMC / main USB / DMA USB interrupts
-    PLIC_ClearPendingIRQ();
 }
